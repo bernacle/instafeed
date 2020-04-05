@@ -6,19 +6,26 @@ import {Post, Header, Avatar, Name, PostImage, Description} from './styles';
 
 export default function Feed() {
   const [feed, setFeed] = useState([]);
+  const [page, setPage] = useState(1);
+  const [tota, setTotal] = useState(0);
+
+  async function loadPage(pageNumber = page) {
+    if (total && pageNumber > total) return;
+
+    const reponse = await fetch(
+      `http://localhost:3000/feed?_expand=author&_limit=5&_page=${pageNumber}`,
+    );
+
+    const data = await reponse.json();
+    const totalItems = response.headers.get('x-total-count');
+
+    setTotal(Math.floor(totalItems / 5));
+    setFeed([...feed, ...data]);
+    setPage(pageNumber + 1);
+  }
 
   useEffect(() => {
-    async function loadFeed() {
-      const reponse = await fetch(
-        'http://localhost:3000/feed?_expand=author&_limit=5&_page=1',
-      );
-
-      const data = await reponse.json();
-
-      setFeed(data);
-    }
-
-    loadFeed();
+    loadPage();
   }, []);
 
   return (
@@ -26,6 +33,8 @@ export default function Feed() {
       <FlatList
         data={feed}
         keyExtractor={(post) => String(post.id)}
+        onEndReached={() => loadPage()}
+        onEndReachedThreshold={0.1}
         renderItem={({item}) => (
           <Post>
             <Header>
@@ -33,9 +42,9 @@ export default function Feed() {
               <Name>{item.author.name}</Name>
             </Header>
 
-            <PostImage source={{uri: item.image}} />
+            <PostImage ratio={item.aspectRatio} source={{uri: item.image}} />
             <Description>
-              <Name>{item.author.name}</Name>
+              <Name>{item.author.name}</Name> <> </>
               {item.description}
             </Description>
           </Post>
